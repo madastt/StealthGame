@@ -6,10 +6,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
-    // Zastępujemy osobne współrzędne obiektem gracza
     private final Player player = new Player(64, 64);
+
+    // Lista przeciwników na planszy
+    private final List<Guard> guards = new ArrayList<>();
 
     private boolean upPressed, downPressed, leftPressed, rightPressed;
     private final int TILE_SIZE = 64;
@@ -68,8 +72,22 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         this.setBackground(Color.BLACK);
         this.setFocusable(true);
         this.addKeyListener(this);
+
+        // Dodajemy przykładowego strażnika na startowej mapie
+        spawnGuards();
+
         Timer timer = new Timer(16, this);
         timer.start();
+    }
+
+    private void spawnGuards() {
+        guards.clear();
+        // Przykładowo w pokoju [0][0] dodajemy strażnika
+        if (roomX == 0 && roomY == 0) {
+            guards.add(new Guard(256, 192));
+        } else if (roomX == 1 && roomY == 0) {
+            guards.add(new Guard(320, 256));
+        }
     }
 
     private boolean isCollision(int x, int y) {
@@ -126,12 +144,32 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             }
         }
 
-        // Rysowanie gracza przez jego własną metodę
+        // Rysowanie strażników
+        for (Guard guard : guards) {
+            guard.draw(g2d);
+        }
+
+        // Rysowanie gracza
         player.draw(g2d);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        // Aktualizacja pozycji strażników
+        for (Guard guard : guards) {
+            guard.update();
+            // Sprawdzenie czy strażnik dotknął gracza (wykrycie w grze stealth)
+            if (guard.checkCollision(player)) {
+                // Reset pozycji gracza po wykryciu
+                player.setX(64);
+                player.setY(64);
+                roomX = 0;
+                roomY = 0;
+                currentMap = worldMaps[roomY][roomX];
+                spawnGuards();
+            }
+        }
+
         int nextX = player.getX();
         int nextY = player.getY();
 
@@ -158,6 +196,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 roomX++;
                 currentMap = worldMaps[roomY][roomX];
                 player.setX(0);
+                spawnGuards(); // Odświeżamy strażników dla nowego pokoju
             } else {
                 player.setX(mapPixelWidth - player.getSize());
             }
@@ -166,6 +205,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 roomX--;
                 currentMap = worldMaps[roomY][roomX];
                 player.setX(mapPixelWidth - player.getSize());
+                spawnGuards();
             } else {
                 player.setX(0);
             }
@@ -177,6 +217,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 roomY++;
                 currentMap = worldMaps[roomY][roomX];
                 player.setY(0);
+                spawnGuards();
             } else {
                 player.setY(mapPixelHeight - player.getSize());
             }
@@ -185,6 +226,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 roomY--;
                 currentMap = worldMaps[roomY][roomX];
                 player.setY(mapPixelHeight - player.getSize());
+                spawnGuards();
             } else {
                 player.setY(0);
             }

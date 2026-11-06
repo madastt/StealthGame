@@ -43,6 +43,6 @@ public class Player {
     }
 
     public int getSpeed() {
-        return 10;
+        return 5;
     }
 }
