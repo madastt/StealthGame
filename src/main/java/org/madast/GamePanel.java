@@ -160,13 +160,9 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             guard.update();
             // Sprawdzenie czy strażnik dotknął gracza (wykrycie w grze stealth)
             if (guard.checkCollision(player)) {
-                // Reset pozycji gracza po wykryciu
-                player.setX(64);
-                player.setY(64);
-                roomX = 0;
-                roomY = 0;
-                currentMap = worldMaps[roomY][roomX];
-                spawnGuards();
+                resetGame();
+                repaint();
+                return;
             }
         }
 
@@ -255,4 +251,15 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void keyTyped(KeyEvent e) {}
+
+    private void resetGame() {
+        player.setX(64);
+        player.setY(64);
+
+        roomX = 0;
+        roomY = 0;
+
+        currentMap = worldMaps[roomY][roomX];
+        spawnGuards();
+    }
 }
