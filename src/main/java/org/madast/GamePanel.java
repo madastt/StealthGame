@@ -8,15 +8,15 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
-    private int playerX = 64;
-    private int playerY = 64;
+    // Zastępujemy osobne współrzędne obiektem gracza
+    private Player player = new Player(64, 64);
+
     private boolean upPressed, downPressed, leftPressed, rightPressed;
     private final int TILE_SIZE = 64;
 
     private final int[][][][] worldMaps = {
             // Wiersz 0 (górne pokoje)
             {
-                    // Pokój [0][0] - startowy (otwarty dół i prawo)
                     {
                             {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
                             {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
@@ -26,7 +26,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
                             {1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1}
                     },
-                    // Pokój [0][1] (otwarty dół i lewo)
                     {
                             {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
                             {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1},
@@ -39,7 +38,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
             },
             // Wiersz 1 (dolne pokoje)
             {
-                    // Pokój [1][0] (otwarta góra i prawo)
                     {
                             {1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1},
                             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -49,7 +47,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                             {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
                             {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
                     },
-                    // Pokój [1][1] (otwarta góra i lewo)
                     {
                             {1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1},
                             {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
@@ -75,6 +72,22 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         timer.start();
     }
 
+    private boolean isCollision(int x, int y) {
+        int leftCol = x / TILE_SIZE;
+        int rightCol = (x + player.getSize() - 1) / TILE_SIZE;
+        int topRow = y / TILE_SIZE;
+        int bottomRow = (y + player.getSize() - 1) / TILE_SIZE;
+
+        if (topRow < 0 || bottomRow >= currentMap.length || leftCol < 0 || rightCol >= currentMap[0].length) {
+            return false;
+        }
+
+        return currentMap[topRow][leftCol] == 1 ||
+                currentMap[topRow][rightCol] == 1 ||
+                currentMap[bottomRow][leftCol] == 1 ||
+                currentMap[bottomRow][rightCol] == 1;
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -93,12 +106,13 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         g2d.translate(offsetX, offsetY);
         g2d.scale(scale, scale);
 
+        // Rysowanie mapy
         for (int row = 0; row < currentMap.length; row++) {
             for (int col = 0; col < currentMap[0].length; col++) {
                 int tileX = col * TILE_SIZE;
                 int tileY = row * TILE_SIZE;
 
-                if(currentMap[row][col]==1){
+                if(currentMap[row][col] == 1){
                     g2d.setColor(Color.GRAY);
                     g2d.fillRect(tileX, tileY, TILE_SIZE, TILE_SIZE);
                     g2d.setColor(Color.DARK_GRAY);
@@ -111,57 +125,68 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
                 }
             }
         }
-        g2d.setColor(Color.GREEN);
-        g2d.fillRect(playerX, playerY, 32, 32);
+
+        // Rysowanie gracza przez jego własną metodę
+        player.draw(g2d);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        int SPEED = 3;
-        if (upPressed) playerY -= SPEED;
-        if (downPressed) playerY += SPEED;
-        if (leftPressed) playerX -= SPEED;
-        if (rightPressed) playerX += SPEED;
+        int nextX = player.getX();
+        int nextY = player.getY();
+
+        if (upPressed) nextY -= player.getSpeed();
+        if (downPressed) nextY += player.getSpeed();
+
+        if (!isCollision(player.getX(), nextY)) {
+            player.setY(nextY);
+        }
+
+        if (leftPressed) nextX -= player.getSpeed();
+        if (rightPressed) nextX += player.getSpeed();
+
+        if (!isCollision(nextX, player.getY())) {
+            player.setX(nextX);
+        }
 
         int mapPixelWidth = currentMap[0].length * TILE_SIZE;
         int mapPixelHeight = currentMap.length * TILE_SIZE;
-        int playerSize = 32;
 
-        //ZMIANA EKRANÓW (Prawo / Lewo)
-        if (playerX > mapPixelWidth - playerSize) {
+        // ZMIANA EKRANÓW (Prawo / Lewo)
+        if (player.getX() > mapPixelWidth - player.getSize()) {
             if (roomX < worldMaps[0].length - 1) {
                 roomX++;
                 currentMap = worldMaps[roomY][roomX];
-                playerX = 0;
+                player.setX(0);
             } else {
-                playerX = mapPixelWidth - playerSize;
+                player.setX(mapPixelWidth - player.getSize());
             }
-        } else if (playerX < 0) {
+        } else if (player.getX() < 0) {
             if (roomX > 0) {
                 roomX--;
                 currentMap = worldMaps[roomY][roomX];
-                playerX = mapPixelWidth - playerSize;
+                player.setX(mapPixelWidth - player.getSize());
             } else {
-                playerX = 0;
+                player.setX(0);
             }
         }
 
-        //ZMIANA EKRANÓW (Dół / Góra)
-        if (playerY > mapPixelHeight - playerSize) {
+        // ZMIANA EKRANÓW (Dół / Góra)
+        if (player.getY() > mapPixelHeight - player.getSize()) {
             if (roomY < worldMaps.length - 1) {
                 roomY++;
                 currentMap = worldMaps[roomY][roomX];
-                playerY = 0;
+                player.setY(0);
             } else {
-                playerY = mapPixelHeight - playerSize;
+                player.setY(mapPixelHeight - player.getSize());
             }
-        } else if (playerY < 0) {
+        } else if (player.getY() < 0) {
             if (roomY > 0) {
                 roomY--;
                 currentMap = worldMaps[roomY][roomX];
-                playerY = mapPixelHeight - playerSize;
+                player.setY(mapPixelHeight - player.getSize());
             } else {
-                playerY = 0;
+                player.setY(0);
             }
         }
 
