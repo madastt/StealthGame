@@ -296,7 +296,6 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         if (code == KeyEvent.VK_D || code == KeyEvent.VK_RIGHT) rightPressed = true;
         if (e.getKeyCode() == KeyEvent.VK_R && gameOver) {
             resetGame();
-            return;
         }
     }
 
