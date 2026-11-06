@@ -9,7 +9,7 @@ import java.awt.event.KeyListener;
 
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
     // Zastępujemy osobne współrzędne obiektem gracza
-    private Player player = new Player(64, 64);
+    private final Player player = new Player(64, 64);
 
     private boolean upPressed, downPressed, leftPressed, rightPressed;
     private final int TILE_SIZE = 64;
@@ -79,13 +79,13 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         int bottomRow = (y + player.getSize() - 1) / TILE_SIZE;
 
         if (topRow < 0 || bottomRow >= currentMap.length || leftCol < 0 || rightCol >= currentMap[0].length) {
-            return false;
+            return true;
         }
 
-        return currentMap[topRow][leftCol] == 1 ||
-                currentMap[topRow][rightCol] == 1 ||
-                currentMap[bottomRow][leftCol] == 1 ||
-                currentMap[bottomRow][rightCol] == 1;
+        return currentMap[topRow][leftCol] != 1 &&
+                currentMap[topRow][rightCol] != 1 &&
+                currentMap[bottomRow][leftCol] != 1 &&
+                currentMap[bottomRow][rightCol] != 1;
     }
 
     @Override
@@ -138,14 +138,14 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
         if (upPressed) nextY -= player.getSpeed();
         if (downPressed) nextY += player.getSpeed();
 
-        if (!isCollision(player.getX(), nextY)) {
+        if (isCollision(player.getX(), nextY)) {
             player.setY(nextY);
         }
 
         if (leftPressed) nextX -= player.getSpeed();
         if (rightPressed) nextX += player.getSpeed();
 
-        if (!isCollision(nextX, player.getY())) {
+        if (isCollision(nextX, player.getY())) {
             player.setX(nextX);
         }
 

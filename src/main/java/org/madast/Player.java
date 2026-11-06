@@ -6,7 +6,6 @@ public class Player {
     private int x;
     private int y;
     private final int size = 32;
-    private final int speed = 10;
 
     public Player(int startX, int startY) {
         this.x = startX;
@@ -44,6 +43,6 @@ public class Player {
     }
 
     public int getSpeed() {
-        return speed;
+        return 10;
     }
 }
